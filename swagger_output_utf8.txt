@@ -1,0 +1,21 @@
+﻿Regenerating docs default
+
+   ErrorException 
+
+  Required @OA\PathItem() not found
+
+  at vendor\zircote\swagger-php\src\Loggers\DefaultLogger.php:23
+     19Γûò         }
+     20Γûò 
+     21Γûò         $error_level = in_array($level, [LogLevel::NOTICE, LogLevel::INFO]) ? E_USER_NOTICE : E_USER_WARNING;
+     22Γûò 
+  Γ₧£  23Γûò         trigger_error($message, $error_level);
+     24Γûò     }
+     25Γûò }
+     26Γûò
+
+  1   vendor\zircote\swagger-php\src\Loggers\DefaultLogger.php:23
+
+  2   vendor\psr\log\src\LoggerTrait.php:61
+      OpenApi\Loggers\DefaultLogger::log("warning", "Required @OA\PathItem() not found", [])
+
