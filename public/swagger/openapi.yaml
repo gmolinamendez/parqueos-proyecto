@@ -1,0 +1,785 @@
+openapi: 3.0.3
+info:
+  title: University Parking API
+  description: API para reservas de parqueo universitario.
+  version: 1.1.0
+servers:
+  - url: http://127.0.0.1:3001
+    description: Local (PHP built-in server)
+  - url: http://127.0.0.1:8000
+    description: Local (artisan serve)
+
+tags:
+  - name: Auth
+    description: Autenticacion y sesion API por token Sanctum.
+  - name: ParkingSpots
+    description: Gestion de espacios de parqueo.
+  - name: Reservations
+    description: Reservas y cancelaciones.
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: Token
+
+  schemas:
+    ApiError:
+      type: object
+      properties:
+        status:
+          type: string
+          example: error
+        message:
+          type: string
+          example: Validation failed.
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: Admin Parqueo
+        email:
+          type: string
+          format: email
+          example: admin.parqueo@example.com
+        roles:
+          type: array
+          items:
+            type: string
+          example: [admin_parqueo]
+
+    AuthLoginData:
+      type: object
+      properties:
+        token:
+          type: string
+          example: 1|x8S0xAtLongSanctumToken
+        token_type:
+          type: string
+          example: Bearer
+        user:
+          $ref: '#/components/schemas/UserProfile'
+
+    AuthLoginResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        message:
+          type: string
+          example: Login successful.
+        data:
+          $ref: '#/components/schemas/AuthLoginData'
+
+    ProfileResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        message:
+          type: string
+          example: Profile retrieved successfully.
+        data:
+          $ref: '#/components/schemas/UserProfile'
+
+    MessageOnlyResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        message:
+          type: string
+          example: Logout successful.
+
+    ParkingSpot:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 5
+        code:
+          type: string
+          example: P-A101
+        zone:
+          type: string
+          example: A
+        is_active:
+          type: boolean
+          example: true
+        is_occupied:
+          type: boolean
+          example: false
+        created_at:
+          type: string
+          format: date-time
+          example: '2026-04-08T14:20:00.000000Z'
+        updated_at:
+          type: string
+          format: date-time
+          example: '2026-04-08T14:20:00.000000Z'
+
+    Reservation:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 12
+        requester_name:
+          type: string
+          example: Docente Uno
+        user_id:
+          type: integer
+          example: 2
+        parking_spot_id:
+          type: integer
+          example: 5
+        spot_code:
+          type: string
+          nullable: true
+          example: P-A101
+        start_at:
+          type: string
+          format: date-time
+          example: '2026-04-08T09:00:00.000000Z'
+        end_at:
+          type: string
+          format: date-time
+          example: '2026-04-08T10:00:00.000000Z'
+        status:
+          type: string
+          enum: [active, cancelled, completed]
+          example: active
+        cancelled_at:
+          type: string
+          format: date-time
+          nullable: true
+          example: null
+        created_at:
+          type: string
+          format: date-time
+          example: '2026-04-08T08:50:00.000000Z'
+        updated_at:
+          type: string
+          format: date-time
+          example: '2026-04-08T08:50:00.000000Z'
+
+    ParkingSpotStoreRequest:
+      type: object
+      required: [code, zone]
+      properties:
+        code:
+          type: string
+          maxLength: 40
+          example: P-A101
+        zone:
+          type: string
+          maxLength: 80
+          example: A
+        is_active:
+          type: boolean
+          example: true
+        is_occupied:
+          type: boolean
+          example: false
+
+    ParkingSpotUpdateRequest:
+      type: object
+      required: [code, zone, is_active, is_occupied]
+      properties:
+        code:
+          type: string
+          maxLength: 40
+          example: P-A101
+        zone:
+          type: string
+          maxLength: 80
+          example: A-Updated
+        is_active:
+          type: boolean
+          example: true
+        is_occupied:
+          type: boolean
+          example: false
+
+    ReservationStoreRequest:
+      type: object
+      required: [requester_name, parking_spot_id, start_at, end_at]
+      properties:
+        requester_name:
+          type: string
+          maxLength: 120
+          example: Docente Uno
+        parking_spot_id:
+          type: integer
+          example: 5
+        start_at:
+          type: string
+          format: date-time
+          example: '2026-04-08 09:00:00'
+        end_at:
+          type: string
+          format: date-time
+          example: '2026-04-08 10:00:00'
+
+  examples:
+    LoginRequestExample:
+      value:
+        email: admin.parqueo@example.com
+        password: password
+        device_name: postman
+    LoginSuccessExample:
+      value:
+        status: success
+        message: Login successful.
+        data:
+          token: 1|x8S0xAtLongSanctumToken
+          token_type: Bearer
+          user:
+            id: 1
+            name: Admin Parqueo
+            email: admin.parqueo@example.com
+            roles: [admin_parqueo]
+    InvalidCredentialsExample:
+      value:
+        status: error
+        message: Invalid credentials.
+        errors:
+          email:
+            - The provided credentials are incorrect.
+    ValidationErrorExample:
+      value:
+        status: error
+        message: Validation failed.
+        errors:
+          code:
+            - The code field is required.
+    SpotInactiveErrorExample:
+      value:
+        status: error
+        message: Only active parking spots can be reserved.
+        errors:
+          parking_spot_id:
+            - The selected parking spot is inactive.
+    SpotOccupiedErrorExample:
+      value:
+        status: error
+        message: Parking spot is occupied.
+        errors:
+          parking_spot_id:
+            - The selected parking spot is currently occupied.
+    TimeConflictErrorExample:
+      value:
+        status: error
+        message: Reservation time conflicts with an active reservation.
+        errors:
+          time_conflict:
+            - A reservation already exists for the selected range.
+
+paths:
+  /api/v1/auth/login:
+    post:
+      tags: [Auth]
+      summary: Login y emision de token Sanctum
+      description: Autentica credenciales y devuelve bearer token.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                device_name:
+                  type: string
+            examples:
+              login:
+                $ref: '#/components/examples/LoginRequestExample'
+      responses:
+        '200':
+          description: Login exitoso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthLoginResponse'
+              examples:
+                success:
+                  $ref: '#/components/examples/LoginSuccessExample'
+        '401':
+          description: Credenciales invalidas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              examples:
+                invalidCredentials:
+                  $ref: '#/components/examples/InvalidCredentialsExample'
+        '422':
+          description: Validacion fallida
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              examples:
+                validation:
+                  $ref: '#/components/examples/ValidationErrorExample'
+
+  /api/v1/auth/profile:
+    get:
+      tags: [Auth]
+      summary: Perfil del usuario autenticado
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Perfil obtenido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileResponse'
+              examples:
+                success:
+                  value:
+                    status: success
+                    message: Profile retrieved successfully.
+                    data:
+                      id: 1
+                      name: Admin Parqueo
+                      email: admin.parqueo@example.com
+                      roles: [admin_parqueo]
+        '401':
+          description: No autenticado
+
+  /api/v1/auth/logout:
+    post:
+      tags: [Auth]
+      summary: Cierre de sesion API
+      description: Revoca los tokens del usuario autenticado.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Logout exitoso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageOnlyResponse'
+              examples:
+                success:
+                  value:
+                    status: success
+                    message: Logout successful.
+        '401':
+          description: No autenticado
+
+  /api/v1/parking-spots:
+    get:
+      tags: [ParkingSpots]
+      summary: Listar parking spots
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista de spots
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  message:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ParkingSpot'
+              examples:
+                success:
+                  value:
+                    status: success
+                    message: Parking spots retrieved successfully.
+                    data:
+                      - id: 5
+                        code: P-A101
+                        zone: A
+                        is_active: true
+                        is_occupied: false
+                        created_at: '2026-04-08T14:20:00.000000Z'
+                        updated_at: '2026-04-08T14:20:00.000000Z'
+        '401':
+          description: No autenticado
+        '403':
+          description: Prohibido por policy
+
+    post:
+      tags: [ParkingSpots]
+      summary: Crear parking spot (admin_parqueo)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ParkingSpotStoreRequest'
+            examples:
+              createSpot:
+                value:
+                  code: P-A101
+                  zone: A
+                  is_active: true
+                  is_occupied: false
+      responses:
+        '201':
+          description: Spot creado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/ParkingSpot'
+              examples:
+                created:
+                  value:
+                    status: success
+                    message: Parking spot created successfully.
+                    data:
+                      id: 5
+                      code: P-A101
+                      zone: A
+                      is_active: true
+                      is_occupied: false
+                      created_at: '2026-04-08T14:20:00.000000Z'
+                      updated_at: '2026-04-08T14:20:00.000000Z'
+        '401':
+          description: No autenticado
+        '403':
+          description: Prohibido por policy
+        '422':
+          description: Validacion fallida
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              examples:
+                validation:
+                  $ref: '#/components/examples/ValidationErrorExample'
+
+  /api/v1/parking-spots/{parking_spot}:
+    parameters:
+      - in: path
+        name: parking_spot
+        required: true
+        description: ID del parking spot.
+        schema:
+          type: integer
+          example: 5
+
+    get:
+      tags: [ParkingSpots]
+      summary: Ver parking spot por ID
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Spot encontrado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/ParkingSpot'
+              examples:
+                success:
+                  value:
+                    status: success
+                    message: Parking spot retrieved successfully.
+                    data:
+                      id: 5
+                      code: P-A101
+                      zone: A
+                      is_active: true
+                      is_occupied: false
+                      created_at: '2026-04-08T14:20:00.000000Z'
+                      updated_at: '2026-04-08T14:20:00.000000Z'
+        '401':
+          description: No autenticado
+        '403':
+          description: Prohibido por policy
+        '404':
+          description: No encontrado
+
+    put:
+      tags: [ParkingSpots]
+      summary: Actualizar parking spot (admin_parqueo)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ParkingSpotUpdateRequest'
+            examples:
+              updateSpot:
+                value:
+                  code: P-A101
+                  zone: A-Updated
+                  is_active: true
+                  is_occupied: false
+      responses:
+        '200':
+          description: Spot actualizado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/ParkingSpot'
+              examples:
+                updated:
+                  value:
+                    status: success
+                    message: Parking spot updated successfully.
+                    data:
+                      id: 5
+                      code: P-A101
+                      zone: A-Updated
+                      is_active: true
+                      is_occupied: false
+                      created_at: '2026-04-08T14:20:00.000000Z'
+                      updated_at: '2026-04-08T14:30:00.000000Z'
+        '401':
+          description: No autenticado
+        '403':
+          description: Prohibido por policy
+        '404':
+          description: No encontrado
+        '422':
+          description: Validacion fallida
+
+    delete:
+      tags: [ParkingSpots]
+      summary: Eliminar parking spot (admin_parqueo)
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Eliminado sin contenido
+        '401':
+          description: No autenticado
+        '403':
+          description: Prohibido por policy
+        '404':
+          description: No encontrado
+
+  /api/v1/reservations:
+    get:
+      tags: [Reservations]
+      summary: Listar reservas
+      description: Admin ve todas; docente/estudiante solo sus reservas.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista de reservas
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  message:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Reservation'
+              examples:
+                success:
+                  value:
+                    status: success
+                    message: Reservations retrieved successfully.
+                    data:
+                      - id: 12
+                        requester_name: Docente Uno
+                        user_id: 2
+                        parking_spot_id: 5
+                        spot_code: P-A101
+                        start_at: '2026-04-08T09:00:00.000000Z'
+                        end_at: '2026-04-08T10:00:00.000000Z'
+                        status: active
+                        cancelled_at: null
+                        created_at: '2026-04-08T08:50:00.000000Z'
+                        updated_at: '2026-04-08T08:50:00.000000Z'
+        '401':
+          description: No autenticado
+
+    post:
+      tags: [Reservations]
+      summary: Crear reserva
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReservationStoreRequest'
+            examples:
+              createReservation:
+                value:
+                  requester_name: Docente Uno
+                  parking_spot_id: 5
+                  start_at: '2026-04-08 09:00:00'
+                  end_at: '2026-04-08 10:00:00'
+      responses:
+        '201':
+          description: Reserva creada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/Reservation'
+              examples:
+                created:
+                  value:
+                    status: success
+                    message: Reservation created successfully.
+                    data:
+                      id: 12
+                      requester_name: Docente Uno
+                      user_id: 2
+                      parking_spot_id: 5
+                      spot_code: P-A101
+                      start_at: '2026-04-08T09:00:00.000000Z'
+                      end_at: '2026-04-08T10:00:00.000000Z'
+                      status: active
+                      cancelled_at: null
+                      created_at: '2026-04-08T08:50:00.000000Z'
+                      updated_at: '2026-04-08T08:50:00.000000Z'
+        '401':
+          description: No autenticado
+        '403':
+          description: Prohibido por policy
+        '422':
+          description: Error de negocio o validacion
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              examples:
+                spotInactive:
+                  $ref: '#/components/examples/SpotInactiveErrorExample'
+                spotOccupied:
+                  $ref: '#/components/examples/SpotOccupiedErrorExample'
+                timeConflict:
+                  $ref: '#/components/examples/TimeConflictErrorExample'
+
+  /api/v1/reservations/{reservation}/cancel:
+    post:
+      tags: [Reservations]
+      summary: Cancelar reserva activa
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: reservation
+          required: true
+          description: ID de la reserva.
+          schema:
+            type: integer
+            example: 12
+      responses:
+        '200':
+          description: Reserva cancelada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/Reservation'
+              examples:
+                cancelled:
+                  value:
+                    status: success
+                    message: Reservation cancelled successfully.
+                    data:
+                      id: 12
+                      requester_name: Docente Uno
+                      user_id: 2
+                      parking_spot_id: 5
+                      spot_code: P-A101
+                      start_at: '2026-04-08T09:00:00.000000Z'
+                      end_at: '2026-04-08T10:00:00.000000Z'
+                      status: cancelled
+                      cancelled_at: '2026-04-08T09:10:00.000000Z'
+                      created_at: '2026-04-08T08:50:00.000000Z'
+                      updated_at: '2026-04-08T09:10:00.000000Z'
+        '401':
+          description: No autenticado
+        '403':
+          description: Prohibido por policy
+        '404':
+          description: No encontrada
+        '422':
+          description: Reserva no cancelable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              examples:
+                notCancelable:
+                  value:
+                    status: error
+                    message: Reservation cannot be cancelled.
+                    errors:
+                      status:
+                        - Only active reservations can be cancelled.

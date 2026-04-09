@@ -1,58 +1,195 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Proyecto Final Grupo 18 - University Parking Reservations API
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+# Ali Cheves 20245542@esen.edu.sv
+# Joseph Lyon 20245574@esen.edu.sv
+# Guillermo Molina 20245562@esen.edu.sv
 
-## About Laravel
+Backend + frontend para gestionar reservas de parqueo universitario.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Stack
+- PHP 8.3+
+- Laravel 13
+- Laravel Sanctum (token auth API)
+- Spatie Laravel Permission (roles y permisos)
+- Pest + PHPUnit
+- Inertia + React + Vite (frontend)
+- Swagger UI + OpenAPI 3.0
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Funcionalidades principales
+- Login/logout/profile API en `/api/v1/auth/*`
+- CRUD de parking spots con permisos por rol
+- Creacion y cancelacion de reservas
+- Reglas de negocio:
+  - solo spots activos se pueden reservar
+  - no reservar spot ocupado
+  - no reservar con conflicto de horario
+  - cancelar reserva activa libera spot
+  - no cancelar reservas canceladas/completadas
+- Documentacion interactiva Swagger
+- Coleccion Postman lista para importar
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Roles del sistema
+- `admin_parqueo`
+  - CRUD completo de parking spots
+  - puede ver todas las reservas
+  - puede cancelar reservas
+- `docente`
+  - crea y cancela sus reservas
+  - ve su historial permitido
+- `estudiante`
+  - crea y cancela sus reservas
+  - ve su historial permitido
 
-## Learning Laravel
+## Requisitos previos
+- PHP 8.3 o superior
+- Composer
+- Node.js 20+ y npm
+- SQLite habilitado en PHP
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
-
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
-
+## Instalacion
+1. Clonar proyecto y entrar al directorio.
+2. Instalar dependencias PHP:
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+composer install
+```
+3. Instalar dependencias frontend:
+```bash
+npm install
+```
+4. Configurar entorno:
+```bash
+cp .env.example .env
+php artisan key:generate
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+## Base de datos y seeders
+Para cargar estructura y datos demo (recomendado):
+```bash
+php artisan migrate:fresh --seed
+```
 
-## Contributing
+Esto crea:
+- roles/permisos
+- usuarios demo
+- spots demo
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## Credenciales demo
+- Admin:
+  - email: `admin.parqueo@example.com`
+  - password: `password`
+- Docente:
+  - email: `docente@example.com`
+  - password: `password`
+- Estudiante:
+  - email: `estudiante@example.com`
+  - password: `password`
 
-## Code of Conduct
+## Levantamiento local
+### Opcion A (recomendada en este proyecto)
+Servidor PHP built-in en puerto 3001:
+```bash
+php -S 127.0.0.1:3001 -t public
+```
+En otra terminal, Vite:
+```bash
+npm run dev
+```
+Abrir:
+- App web: `http://127.0.0.1:3001`
+- Modulo parking: `http://127.0.0.1:3001/parking`
+- Swagger UI: `http://127.0.0.1:3001/swagger`
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+### Opcion B (artisan serve)
+```bash
+php artisan serve --host=127.0.0.1 --port=3001
+npm run dev
+```
+Si tu Windows falla en puertos 8000-8010, usa siempre `--port=3001` o la Opcion A.
 
-## Security Vulnerabilities
+## Ejecutar pruebas
+```bash
+php artisan test
+```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+Notas:
+- Testing usa SQLite en memoria (`phpunit.xml`).
+- Actualmente la suite pasa completamente.
 
-## License
+## Documentacion API
+### Swagger (OpenAPI)
+- UI: `/swagger`
+- Spec: `/swagger/openapi.yaml`
+- Archivo spec: `public/swagger/openapi.yaml`
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+### Postman
+Coleccion incluida en:
+- `postman/UniversityParkingAPI_v1.postman_collection.json`
+
+Importar en Postman y ajustar variable `base_url`.
+
+## Rutas API principales
+Base: `/api/v1`
+
+Auth:
+- `POST /auth/login`
+- `POST /auth/logout`
+- `GET /auth/profile`
+
+Parking spots:
+- `GET /parking-spots`
+- `POST /parking-spots`
+- `GET /parking-spots/{parking_spot}`
+- `PUT /parking-spots/{parking_spot}`
+- `DELETE /parking-spots/{parking_spot}`
+
+Reservations:
+- `GET /reservations`
+- `POST /reservations`
+- `POST /reservations/{reservation}/cancel`
+
+## Frontend
+Pagina principal del modulo:
+- `/parking`
+
+Incluye:
+- sesion API por token
+- formulario de reservas
+- listado y cancelacion
+- CRUD de spots para admin
+- vistas por rol
+
+## Archivos clave
+- API routes: `routes/api.php`
+- Web routes: `routes/web.php`
+- Auth controller: `app/Http/Controllers/Api/V1/AuthController.php`
+- Spots controller: `app/Http/Controllers/Api/V1/ParkingSpotController.php`
+- Reservations controller: `app/Http/Controllers/Api/V1/ReservationController.php`
+- Policies: `app/Policies/*`
+- Tests API: `tests/Feature/Api/*`
+- Frontend parking page: `resources/js/pages/parking/index.tsx`
+
+## Troubleshooting rapido
+1. Error al levantar servidor con `php artisan serve`:
+- Probar:
+```bash
+php artisan serve --host=127.0.0.1 --port=3001
+```
+- O usar:
+```bash
+php -S 127.0.0.1:3001 -t public
+```
+
+2. Login falla con credenciales demo:
+- Ejecutar:
+```bash
+php artisan migrate:fresh --seed
+```
+
+3. Cambios frontend no se ven:
+- Confirmar `npm run dev` activo.
+- Limpiar cache del navegador.
+
+4. Verificar rutas:
+```bash
+php artisan route:list
+```
